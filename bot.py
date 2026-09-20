@@ -50,17 +50,28 @@ def handle(message):
                     say(cid,
                         "🔑 <b>Верификация</b>\n\n"
                         "1. Зайди на сайт и получи код\n"
-                        "2. Напиши: <code>/verify КОД</code>\n\n"
-                        "Пример: <code>/verify ABC123</code>",
+                        "2. Напиши: <code>/verify КОД ПАРОЛЬ</code>\n\n"
+                        "Пример: <code>/verify ABC123 mypass123</code>",
                         parse_mode="HTML"
                     )
                     return
 
-                code = parts[1].strip().upper()
+                args = parts[1].strip().split()
+                if len(args) < 2:
+                    say(cid, "❌ Формат: <code>/verify КОД ПАРОЛЬ</code>", parse_mode="HTML")
+                    return
+
+                code = args[0].upper()
+                password = args[1]
                 result = check_code(code)
                 if result and result["username"].lower() == uname.lower():
-                    verify_user(uid, uname)
-                    say(cid, f"✅ Аккаунт @{uname} привязан!")
+                    verify_user(uid, uname, password)
+                    say(cid,
+                        f"✅ Аккаунт @{uname} привязан!\n\n"
+                        f"🔑 Твой пароль: <code>{password}</code>\n"
+                        f"⚠️ Запиши его — он нужен для входа на сайт.",
+                        parse_mode="HTML"
+                    )
                 else:
                     say(cid, "❌ Неверный код или username не совпадает.\nПроверь на сайте и попробуй снова.")
                 return
@@ -83,7 +94,7 @@ def handle(message):
             if cmd == "help":
                 say(cid,
                     "🔑 <b>Verify Bot</b>\n\n"
-                    "<code>/verify КОД</code> — привязать аккаунт\n"
+                    "<code>/verify КОД ПАРОЛЬ</code> — привязать аккаунт\n"
                     "<code>/unverify</code> — отвязать аккаунт\n"
                     "<code>/status</code> — проверить статус\n"
                     "<code>/help</code> — эта справка",

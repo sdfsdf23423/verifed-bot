@@ -5,7 +5,7 @@ import random
 import string
 from flask import Flask, request, render_template_string, jsonify, session, redirect, url_for, send_file
 from unixgram import Bot, ApiError
-from db import init_db, add_code, check_code, is_verified, get_verified_user
+from db import init_db, add_code, check_code, is_verified, get_verified_user, check_login
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -75,6 +75,7 @@ h1{font-size:18px}
 <div class="lbl">Step 2</div>
 <div class="desc">Already verified? Log in</div>
 <div class="field"><input type="text" id="loginUser" placeholder="username" autocomplete="off"></div>
+<div class="field"><input type="password" id="loginPass" placeholder="password" autocomplete="off"></div>
 <button class="btn" onclick="doLogin()">Log in</button>
 <div class="msg msg-ok" id="okMsg">Logged in</div>
 <div class="msg msg-err" id="errMsg">Not verified</div>
@@ -135,8 +136,10 @@ async function getCode(){
   else{document.getElementById('userErr').style.display='block'}
 }
 async function doLogin(){
-  const u=document.getElementById('loginUser').value.trim();if(!u)return;
-  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u})});
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  if(!u||!p)return;
+  const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
   const d=await r.json();
   if(d.ok){window.location.href='/dashboard'}
   else{document.getElementById('errMsg').style.display='block';document.getElementById('okMsg').style.display='none'}
@@ -290,9 +293,10 @@ def api_code():
 def api_login():
     data = request.json
     username = data.get("username", "").strip().lstrip("@")
-    if not username:
+    password = data.get("password", "")
+    if not username or not password:
         return jsonify({"ok": False})
-    if is_verified_by_username(username):
+    if check_login(username, password):
         session["user"] = username
         return jsonify({"ok": True})
     return jsonify({"ok": False})
